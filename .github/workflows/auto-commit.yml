@@ -1,0 +1,36 @@
+name: Auto Commit to README
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs at 00:00 UTC daily
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  auto-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate random number and commit
+        run: |
+          # Generate random number between 20 and 30
+          RANDOM_COUNT=$((RANDOM % 17 + 34))
+          echo "Selected $RANDOM_COUNT commits for today"
+
+          # Calculate delay between commits (in seconds) to spread over 24 hours
+          DELAY=$(( (24 * 3600) / RANDOM_COUNT ))
+
+          # Loop to perform commits
+          for ((i=1; i<=RANDOM_COUNT; i++)); do
+            echo "Commit $i of $RANDOM_COUNT at $(date '+%Y-%m-%d %H:%M:%S UTC')" >> README.md
+            git config --global user.name "GitHub Action"
+            git config --global user.email "action@github.com"
+            git add README.md
+            git commit -m "Auto-commit $i of $RANDOM_COUNT: $(date '+%Y-%m-%d %H:%M:%S UTC')"
+            git push
+            # Sleep to spread commits (skip sleep on last iteration)
+            if [ $i -lt $RANDOM_COUNT ]; then
+              sleep $DELAY
+            fi
+          done
